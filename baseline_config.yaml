@@ -1,0 +1,65 @@
+---
+# After this configuration has run the hostname will be changed, and root password disabled.
+# 
+
+- name: Base configuration
+  hosts: pre_config_master
+  become: true
+  tasks:
+  - name: Upgrade apt
+    apt:
+      update_cache: yes
+      upgrade: safe
+
+  - name: Create k8s user account
+    user:
+      name: k8sadmin
+      comment: Kubernetes Admin
+      shell: /bin/bash
+      groups: sudo
+      append: yes
+      create_home: yes
+
+  - name: Lock the default account
+    user:
+      name: ubuntu
+      password_lock: yes
+
+  - name: Update hostnames
+    hostname:
+      name: "{{ new_hostname }}"
+      use: systemd
+
+  - name: Update /etc/hosts
+    become: true
+    copy:
+      src: templates/hosts.j2
+      dest: /etc/hosts
+      owner: root
+      group: root
+      mode: 0644
+
+  - name: Restart sshd service
+    service:
+      name: sshd
+      state: restarted
+    
+  - name: Enable UFW
+    tags: firewall
+    community.general.ufw:
+      state: enabled
+      policy: deny 
+  
+  - name: Set UFW Rules
+    tags: firewall
+    community.general.ufw:
+      rule: "allow"
+      port: "{{ item }}"
+      proto: "tcp"
+    with_items:
+      - "22"
+      - "80"
+      - "443"
+      - "8000"
+      - "3000"
+        

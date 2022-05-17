@@ -1,6 +1,7 @@
 ---
-- name: Setup system packages and install Docker 
-  hosts: all
+- name: Setup system packages and install Docker
+  become: true
+  hosts: post_config_master
   tasks:
     - name: Install required system packages
       apt:
@@ -12,6 +13,7 @@
           - python3-pip
           - virtualenv
           - python3-setuptools
+          - samba
         state: latest
         update_cache: true
     
