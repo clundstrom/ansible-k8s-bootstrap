@@ -1,5 +1,10 @@
 [pre_config_master]
-192.168.1.57 new_hostname=master1
+192.168.1.57 new_hostname=master01
+192.168.1.56 new_hostname=worker01
 
 [post_config_master]
-k8sadmin@master1
+k8s@master01
+k8s@worker01
+
+[controller]
+localhost

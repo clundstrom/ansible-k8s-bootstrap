@@ -3,4 +3,4 @@ kind: ClusterConfiguration
 kubernetesVersion: stable
 controlPlaneEndpoint: "master01:6443" # Match host alias
 networking:
-  podSubnet: 192.168.0.0/16 # Match with Calico
+  podSubnet: 10.1.0.0/16 # Match with Calico

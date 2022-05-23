@@ -3,33 +3,42 @@
   become: true
   hosts: post_config_master
   tasks:
-    - name: Install required system packages
+    - name: Install system packages
       apt:
         pkg:
           - apt-transport-https
           - ca-certificates
           - curl
+          - gnupg
+          - lsb-release
           - software-properties-common
           - python3-pip
           - virtualenv
           - python3-setuptools
           - samba
+          - net-tools
         state: latest
         update_cache: true
     
-    - name: Add Docker GPG apt Key
+    - name: Add Docker GPG key
       apt_key:
         url: https://download.docker.com/linux/ubuntu/gpg
         state: present
 
-    - name: Add Docker Repository
+    - name: Add Docker repo
       apt_repository:
         repo: deb https://download.docker.com/linux/ubuntu focal stable
         state: present
 
-    - name: Update apt and install docker-ce
+    - name: Install Docker
       apt:
-        name: docker-ce
+        pkg:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
         state: latest
         update_cache: true
+    
+    
         

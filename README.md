@@ -16,6 +16,32 @@ ssh-copy-id -i ~/.ssh/admin.pub <host_address>
 `ansible all -m ping`
 
 
-## Dry run the base config
+## Run the base config
 
-`ansible-playbook base_config.yaml --check --diff -u ubuntu`
+Optional: Dry run with `--check --diff` to see what will change.
+
+`ansible-playbook base_config.yaml --diff -u ubuntu --ask-vault-pass -e @secrets.yaml`
+
+## Vault management
+
+1. Create a file secrets.yaml
+```yaml
+---
+k8s_admin_password: "<your password>"
+```
+
+2. (Optional): Create a vault.pass file to store the vault password.
+3. Encrypt with ansible-vault encrypt secrets.yaml
+
+
+### Viewing secrets
+
+To view secrets: `ansible-vault view secrets.yaml`
+
+
+
+## Bootstrap cluster
+
+Use k8s user with sudo for bootstrapping.
+
+`ansible-playbook bootstrap.yaml --check --diff -u k8s -K`

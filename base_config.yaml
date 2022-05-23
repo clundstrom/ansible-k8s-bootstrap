@@ -13,17 +13,30 @@
 
   - name: Create k8s user account
     user:
-      name: k8sadmin
+      name: k8s
       comment: Kubernetes Admin
       shell: /bin/bash
       groups: sudo
+      password: "{{ k8s_admin_password | password_hash('sha512') }}"
       append: yes
       create_home: yes
+  
+  - name: Create SSH for new user
+    file:
+      path: /home/k8s/.ssh/
+      state: directory
+      mode: '0700'
+      owner: k8s
+      group: k8s
 
-  - name: Lock the default account
-    user:
-      name: ubuntu
-      password_lock: yes
+  - name: Copy authorized_keys from default account to new user
+    copy:
+      src: /home/ubuntu/.ssh/authorized_keys
+      dest: /home/k8s/.ssh/authorized_keys
+      remote_src: yes
+      owner: k8s
+      mode: '0600'
+      group: k8s
 
   - name: Update hostnames
     hostname:
@@ -60,6 +73,19 @@
       - "22"
       - "80"
       - "443"
-      - "8000"
-      - "3000"
+      - "8000"  # dev
+      - "3000"  # dev
+      - "139"   # smb
+      - "445"   # smb
+
+  - name: Lock the default account
+    user:
+      name: ubuntu
+      password_lock: yes
+
+  # - name: Disable swap
+  #   shell: /usr/sbin/swapoff -a
+
+  # - name: Disable swap persistently
+  #   command: sudo sed -i '/ swap / s/^/#/' /etc/fstab
         

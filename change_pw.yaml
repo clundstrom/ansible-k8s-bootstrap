@@ -1,0 +1,10 @@
+---
+- name: Change pw
+  hosts: pre_config_master
+  become: true
+  tasks:
+  - name: change password
+    user:
+      name: "k8s"
+      state: present
+      password: "{{ k8s_admin_password | password_hash('sha512') }}"
