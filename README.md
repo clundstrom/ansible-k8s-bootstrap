@@ -1,4 +1,4 @@
-# Ansible K8s cluster bootstrap on Raspberry Pi 4
+# Ansible K8s bootstraping for 2 node Raspberry Pi 3 & 4 cluster
 
 These plays are defined for a clean Ubuntu server 20.04 LTS vanilla installation.
 
