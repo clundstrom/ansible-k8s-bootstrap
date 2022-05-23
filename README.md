@@ -1,4 +1,4 @@
-# Ansible K8s bootstraping for 2 node Raspberry Pi 3 & 4 cluster
+# Ansible K8s bootstrapping for 2 node Raspberry Pi 3 & 4 cluster
 
 These plays are defined for a clean Ubuntu server 20.04 LTS vanilla installation.
 
@@ -31,13 +31,12 @@ k8s_admin_password: "<your password>"
 ```
 
 2. (Optional): Create a vault.pass file to store the vault password.
-3. Encrypt with ansible-vault encrypt secrets.yaml
+3. Encrypt with `ansible-vault encrypt secrets.yaml`
 
 
 ### Viewing secrets
 
-To view secrets: `ansible-vault view secrets.yaml`
-
+`ansible-vault view secrets.yaml`
 
 
 ## Bootstrap cluster
