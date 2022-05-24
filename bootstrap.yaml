@@ -1,44 +1,64 @@
 ---
-- name: Setup system packages and install Docker
+- name: Setup system packages
   become: true
   hosts: post_config_master
+
   tasks:
     - name: Install system packages
       apt:
         pkg:
-          - apt-transport-https
-          - ca-certificates
-          - curl
-          - gnupg
-          - lsb-release
           - software-properties-common
           - python3-pip
           - virtualenv
           - python3-setuptools
           - samba
           - net-tools
+          - docker.io
         state: latest
         update_cache: true
     
-    - name: Add Docker GPG key
+    - name: Add K8s GPG key
       apt_key:
-        url: https://download.docker.com/linux/ubuntu/gpg
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        
         state: present
 
-    - name: Add Docker repo
+    - name: Add k8s repo
       apt_repository:
-        repo: deb https://download.docker.com/linux/ubuntu focal stable
+        repo: deb http://apt.kubernetes.io/ kubernetes-xenial main
         state: present
 
-    - name: Install Docker
+
+    - name: Install K8s
       apt:
         pkg:
-          - docker-ce
-          - docker-ce-cli
-          - containerd.io
-          - docker-compose-plugin
+          - kubeadm
+          - kubelet
+          - kubectl
         state: latest
         update_cache: true
+
+
+    - name: Hold k8s packages
+      dpkg_selections:
+        name:
+          - kubeadm
+          - kubelet
+          - kubectl
+        selection: hold
+
+    - name: Copy authorized_keys from default account to new user
+      copy:
+        src: templates/daemon.json
+        dest: /etc/docker/daemon.json
+        remote_src: no
+        owner: k8s
+        mode: '0755'
+        group: k8s
+      
+    - name: Remove dependencies that are no longer required
+      apt:
+        autoremove: yes
     
     
         
