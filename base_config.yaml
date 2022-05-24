@@ -1,7 +1,6 @@
 ---
-# After this configuration has run the hostname will be changed, and root password disabled.
+# After this configuration has run the hostname will be changed
 # 
-
 - name: Base configuration
   hosts: pre_config
   become: true

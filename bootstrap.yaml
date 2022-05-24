@@ -28,7 +28,6 @@
         repo: deb http://apt.kubernetes.io/ kubernetes-xenial main
         state: present
 
-
     - name: Install K8s
       apt:
         pkg:
@@ -38,20 +37,11 @@
         state: latest
         update_cache: true
 
-
-    - name: Hold k8s packages
-      dpkg_selections:
-        name:
-          - kubeadm
-          - kubelet
-          - kubectl
-        selection: hold
-
     - name: Make sure docker uses correct cgroup driver
       copy:
-        src: templates/daemon.json
+        src: "{{ playbook_dir }}/templates/daemon.json"
         dest: /etc/docker/daemon.json
-        remote_src: yes
+        remote_src: no
         owner: k8s
         mode: '0755'
         group: k8s
@@ -70,7 +60,18 @@
       apt:
         autoremove: yes
 
-################################
+    - name: Enable cgroups memory
+      copy:
+        src: "{{ playbook_dir }}/templates/cmdline.txt"
+        dest: /boot/firmware/cmdline.txt
+        remote_src: no
+        owner: root
+        mode: '0751'
+        group: root
+
+    - name: Reboot machines and wait until they are back up
+      reboot:
+
 ################################
 ################################
 
@@ -78,46 +79,90 @@
   become: true
   hosts: [master_nodes]
   tasks:
-
     - name: Create bootstrap dir to store configs
       file:
         path: "/home/k8s/.bootstrap"
         state: directory
 
-   - name: Copy kube-config
+    - name: Copy kube-config
       copy:
-        src: templates/kube-config.yaml
+        src: "{{ playbook_dir }}/templates/kube-config.yaml"
         dest: /home/k8s/.bootstrap/kube-config.yaml
-        remote_src: yes
+        remote_src: no
         owner: k8s
         mode: '0755'
         group: k8s
-    
+      
     - name: Copy calico config
       copy:
-        src: templates/calico.yaml
+        src: "{{ playbook_dir }}/templates/calico.yaml"
         dest: /home/k8s/.bootstrap/calico.yaml
-        remote_src: yes
+        remote_src: no
         owner: k8s
         mode: '0755'
         group: k8s
 
-  - name: Init master
-    shell: kubeadm init --config /home/k8s/.bootstrap/kube-config.yaml
-  
-  - name: Copy kubectl config
-    copy: 
-      src: /etc/kubernetes/admin.conf
-      dest: /home/k8s/.kube/config
-      owner: k8s
-      group: k8s
-      remote_src: yes
+    - name: Init master
+      become: true
+      shell: kubeadm init --config /home/k8s/.bootstrap/kube-config.yaml
+    
+    - name: Copy kubectl config
+      copy: 
+        src: /etc/kubernetes/admin.conf
+        dest: /home/k8s/.kube/config
+        owner: k8s
+        group: k8s
+        remote_src: yes
 
-  - name: Fetch kubectl config
-    fetch:
-      src: /home/k8s/.kube/config
-      dest: .kube/config
-      flat: yes
+    - name: Fetch kubectl config
+      fetch:
+        become: false
+        src: /home/k8s/.kube/config
+        dest: "{{ playbook_dir }}/.kube/config"
+        flat: yes
 
-  - name: Install calico CNI
-    shell: kubectl apply -f /home/k8s/calico.yaml
+    - name: Install calico CNI
+      become: false
+      shell: kubectl apply -f /home/k8s/.bootstrap/calico.yaml
+
+    - name: Create join token
+      become: false
+      shell: kubeadm token create  --print-join-command
+      register: kubernetes_join_command
+
+    - name: Print join command to console
+      debug:
+        msg: "{{ kubernetes_join_command.stdout_lines[0] }}"
+
+    - name: Set join command fact
+      set_fact:
+        join_command: "{{ kubernetes_join_command.stdout_lines[0] }}"
+
+################################
+################################
+
+- name: Join worker nodes to cluster
+  hosts: [worker_nodes]
+  become: yes
+  gather_facts: yes
+
+  tasks:
+  - name: Join worker nodes
+    shell: "{{ hostvars['k8s@master01']['join_command'] }}"
+    register: joined_or_not
+
+  - name: Print join output
+    debug:
+      msg: "{{ joined_or_not.stdout }}"
+
+################################
+################################
+
+- name: Configure cluster
+  hosts: [master_nodes]
+  tasks:
+  - name: Remove master node taint
+    shell: kubectl taint nodes master01 node-role.kubernetes.io/control-plane:NoSchedule-
+
+  - name: Install nginx ingress-controller
+    shell: kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.2.0/deploy/static/provider/baremetal/deploy.yaml

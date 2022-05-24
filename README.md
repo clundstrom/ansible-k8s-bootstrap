@@ -1,6 +1,14 @@
-# Ansible K8s bootstrapping for multinode Raspberry Pi 3 & 4 cluster
+# Ansible K8s bootstrapping for multinode cluster
 
 These plays are defined for clean Ubuntu server 20.04 LTS vanilla installations.
+
+## Hardware
+
+* Master node: Raspberry Pi 4 4GB  
+* Worker node: Raspberry Pi 3B+ 1GB
+
+<img src="images/cluster.jpg" width="50%">
+
 
 ## SSH setup
 
@@ -39,7 +47,7 @@ Host worker01
 
 Optional: Dry run with `--check --diff` to see what will change.
 
-Note: In subsequent runs the ubuntu will be disabled and the hostnames will be changed.
+Note: In subsequent runs the ubuntu user is disabled and the hostnames are changed.
 
 `ansible-playbook base_config.yaml --diff -u ubuntu --ask-vault-pass -e @secrets.yaml`
 
@@ -63,7 +71,7 @@ k8s_admin_password: "<your password>"
 `ansible-vault view secrets.yaml`
 
 
-## Bootstrap cluster
+## Bootstrap & configure cluster
 
 Use k8s user with sudo for bootstrapping.
 
