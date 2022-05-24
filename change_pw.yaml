@@ -1,6 +1,6 @@
 ---
 - name: Change pw
-  hosts: pre_config_master
+  hosts: pre_config
   become: true
   tasks:
   - name: change password

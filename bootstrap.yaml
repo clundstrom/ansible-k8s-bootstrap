@@ -1,7 +1,7 @@
 ---
-- name: Setup system packages
+- name: Bootstrap the master and worker nodes
   become: true
-  hosts: post_config_master
+  hosts: [master_nodes, worker_nodes]
 
   tasks:
     - name: Install system packages
@@ -47,18 +47,77 @@
           - kubectl
         selection: hold
 
-    - name: Copy authorized_keys from default account to new user
+    - name: Make sure docker uses correct cgroup driver
       copy:
         src: templates/daemon.json
         dest: /etc/docker/daemon.json
-        remote_src: no
+        remote_src: yes
         owner: k8s
         mode: '0755'
         group: k8s
+
+    - name: Restart docker service
+      service:
+        name: docker
+        state: restarted
       
+    - name: Create home directory
+      file:
+        path: "/home/k8s/.kube"
+        state: directory
+
     - name: Remove dependencies that are no longer required
       apt:
         autoremove: yes
+
+################################
+################################
+################################
+
+- name: Configure master nodes
+  become: true
+  hosts: [master_nodes]
+  tasks:
+
+    - name: Create bootstrap dir to store configs
+      file:
+        path: "/home/k8s/.bootstrap"
+        state: directory
+
+   - name: Copy kube-config
+      copy:
+        src: templates/kube-config.yaml
+        dest: /home/k8s/.bootstrap/kube-config.yaml
+        remote_src: yes
+        owner: k8s
+        mode: '0755'
+        group: k8s
     
-    
-        
+    - name: Copy calico config
+      copy:
+        src: templates/calico.yaml
+        dest: /home/k8s/.bootstrap/calico.yaml
+        remote_src: yes
+        owner: k8s
+        mode: '0755'
+        group: k8s
+
+  - name: Init master
+    shell: kubeadm init --config /home/k8s/.bootstrap/kube-config.yaml
+  
+  - name: Copy kubectl config
+    copy: 
+      src: /etc/kubernetes/admin.conf
+      dest: /home/k8s/.kube/config
+      owner: k8s
+      group: k8s
+      remote_src: yes
+
+  - name: Fetch kubectl config
+    fetch:
+      src: /home/k8s/.kube/config
+      dest: .kube/config
+      flat: yes
+
+  - name: Install calico CNI
+    shell: kubectl apply -f /home/k8s/calico.yaml

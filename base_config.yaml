@@ -3,7 +3,7 @@
 # 
 
 - name: Base configuration
-  hosts: pre_config_master
+  hosts: pre_config
   become: true
   tasks:
   - name: Upgrade apt

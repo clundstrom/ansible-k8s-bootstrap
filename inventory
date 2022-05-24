@@ -1,9 +1,11 @@
-[pre_config_master]
+[pre_config]
 192.168.1.57 new_hostname=master01
 192.168.1.56 new_hostname=worker01
 
-[post_config_master]
+[master_nodes]
 k8s@master01
+
+[worker_nodes]
 k8s@worker01
 
 [controller]
