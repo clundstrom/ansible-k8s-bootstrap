@@ -161,8 +161,35 @@
 - name: Configure cluster
   hosts: [master_nodes]
   tasks:
+  
   - name: Remove master node taint
     shell: kubectl taint nodes master01 node-role.kubernetes.io/control-plane:NoSchedule-
+
+  - name: Copy metallb
+    copy:
+      src: "{{ playbook_dir }}/templates/metallb.yaml"
+      dest: /home/k8s/.bootstrap/metallb.yaml
+      remote_src: no
+      owner: k8s
+      mode: '0755'
+      group: k8s
+
+  - name: Install metallb
+    become: false
+    shell: kubectl apply -f /home/k8s/.bootstrap/metallb.yaml
+
+  - name: Copy ELB config map
+    copy:
+      src: "{{ playbook_dir }}/templates/elb-cm.yaml"
+      dest: /home/k8s/.bootstrap/elb-cm.yaml
+      remote_src: no
+      owner: k8s
+      mode: '0755'
+      group: k8s
+
+  - name: Set ELB config map
+    become: false
+    shell: kubectl apply -f /home/k8s/.bootstrap/elb-cm.yaml 
 
   - name: Install nginx ingress-controller
     shell: kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.2.0/deploy/static/provider/baremetal/deploy.yaml
