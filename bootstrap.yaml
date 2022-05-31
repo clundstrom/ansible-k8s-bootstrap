@@ -17,6 +17,13 @@
         state: latest
         update_cache: true
     
+    - name: Set docker sock permissions
+      file:
+        path: /var/run/docker.sock
+        owner: root
+        group: docker
+        mode: '1666'
+
     - name: Add K8s GPG key
       apt_key:
         url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
